@@ -48,24 +48,30 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	metadata, err := cfg.db.GetVideo(videoID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not get video metadata", err)
+		return
 	}
 
 	if metadata.UserID != userID {
 		respondWithError(w, http.StatusUnauthorized, "Not video owner", err)
+		return
 	}
 
 	mediaType, _, err := mime.ParseMediaType(contentType)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Could not parse media type", err)
+		return
 	}
+	fmt.Printf(mediaType)
 
-	if mediaType != "image/jpeg" || mediaType != "image/png" {
+	if mediaType != "image/jpeg" && mediaType != "image/png" {
 		respondWithError(w, http.StatusBadRequest, "Invalid filetype", err)
+		return
 	}
 
 	fileExtensions, err := mime.ExtensionsByType(mediaType)
 	if err != nil || len(fileExtensions) == 0 {
 		respondWithError(w, http.StatusBadRequest, "Could not get file extensions", err)
+		return
 	}
 
 	filePath := filepath.Join(cfg.assetsRoot, fmt.Sprintf("/%v%v", videoIDString, fileExtensions[0]))
@@ -73,6 +79,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Could not create file", err)
+		return
 	}
 
 	io.Copy(newFile, file)
@@ -83,6 +90,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	err = cfg.db.UpdateVideo(metadata)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not update video in database", err)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, metadata)
