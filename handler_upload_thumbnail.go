@@ -45,6 +45,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	defer file.Close()
+
 	contentType := header.Header.Get("Content-Type")
 
 	metadata, err := cfg.db.GetVideo(videoID)
