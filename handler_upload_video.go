@@ -87,7 +87,14 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Could not generate random key", err)
 		return
 	}
-	keyString := fmt.Sprintf("%x.mp4", randomBytes) // Convert to hex string and add extension
+
+	aspect_ratio, err := getVideoAspectRatio(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not get video aspect ratio", err)
+		return
+	}
+
+	keyString := fmt.Sprintf("%v/%x.mp4", aspect_ratio, randomBytes) // Convert to hex string and add extension
 
 	putOutput, err := cfg.s3Client.PutObject(context.Background(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
